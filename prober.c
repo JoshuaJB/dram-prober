@@ -68,7 +68,6 @@ void read_loop(int magnitude, volatile char* memblock) {
 int main(int argc, char **argv)
 {
 	void *addr;
-	int ret;
 	size_t length = 1024 << 20; // 1GB
 	int flags = MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB;
 	int shift = 0;
@@ -103,6 +102,7 @@ int main(int argc, char **argv)
 	while (!done) {
 		fprintf(stdout, "Enter command ([a]ddress, [n]ext, [b]ack, [r]edo, or [q]uit): ");
 		// Last character before newline is command
+		// If no command is entered, the last command is repeated
 		while ((command_buffer = fgetc(stdin)) != '\n')
 			command = command_buffer;
 		switch (command) {
@@ -117,6 +117,7 @@ int main(int argc, char **argv)
 				break;
 			case 'n':
 				offset++;
+				// Exit if an oversized offset is requested
 				if ((1 << offset) >= length)
 					done = 1;
 				else
@@ -124,7 +125,11 @@ int main(int argc, char **argv)
 				break;
 			case 'b':
 				offset--;
-				read_loop(offset, addr);
+				// Exit if an undersized offset is requested
+				if (offset < 0)
+					done = 1;
+				else
+					read_loop(offset, addr);
 				break;
 			case 'r':
 				read_loop(offset, addr);
@@ -143,5 +148,5 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	return ret;
+	return 0;
 }
