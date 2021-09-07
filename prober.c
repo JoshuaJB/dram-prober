@@ -65,6 +65,31 @@ void read_loop(int magnitude, volatile char* memblock) {
 		memblock[1 << magnitude]++;
 }
 
+#define PAGEMAP_ENTRY_SIZE 8
+uint64_t get_page_frame_number(void *virt_addr) {
+	int err;
+	uint64_t pagemap_entry;
+	FILE * f = fopen("/proc/self/pagemap", "rb");
+	if (!f) {
+		perror("Unable to open /proc/self/pagemap!");
+		return -1;
+	}
+
+	uint64_t file_offset = (uint64_t)virt_addr / getpagesize() * PAGEMAP_ENTRY_SIZE;
+	err = fseek(f, file_offset, SEEK_SET);
+	if (err) {
+		perror("Unable to seek /proc/self/pagemap!");
+		return -1;
+	}
+	err = fread(&pagemap_entry, PAGEMAP_ENTRY_SIZE, 1, f);
+	if (err == -1) {
+		perror("Unable to read from /proc/self/pagemap!");
+		return -1;
+	}
+	// PFN is lower 55 bits
+	return pagemap_entry & 0x007FFFFFFFFFFFFFul;
+}
+
 int main(int argc, char **argv)
 {
 	void *addr;
@@ -94,6 +119,13 @@ int main(int argc, char **argv)
 	// Make sure the page is actually allocated
 	*((volatile char*)addr) = 1;
 	*((volatile char*)addr) = 0;
+	uint64_t pfn = get_page_frame_number(addr);
+	fprintf(stdout, "Mapped 1GB at virtual address %p", addr);
+	if (pfn == -1)
+		fprintf(stderr, "Unable to get page frame number of huge page. Are you running as sudo?\n");
+	else
+		fprintf(stdout, " with physical page frame number %#lx", pfn);
+	fprintf(stdout, "\n");
 
 	int done = 0;
 	char command, command_buffer;

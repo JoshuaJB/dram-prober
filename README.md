@@ -6,12 +6,15 @@ reverse engineer the boolean function used to determine the bank selection.
 
 ## Setup
 1. Make sure that huge pages are enabled with `default_hugepagesz=1GB hugepagesz=1GB hugepages=1` on the kernel cmdline
-2. Start `prober`
-3. Use `/proc/<pid>/maps` to get virtual address of huge page
-4. Use `pfn_q` with pid and virtual address to get page frame number
-5. Convert hex page frame number to hex address by adding 3 zeros (multiply by 0x1000)
-6. Run `echo "base=<frame address as hex> size=0x40000000 type=uncachable" >| /proc/mtrr`
-7. Run `prober` program and observe activity on the DRAM bus with logic analyzer
+2. Start `sudo prober` (`sudo` is needed to get the page frame number)
+3. After it initializes, record the printed page frame number
+4. Convert hex page frame number to hex address by adding 3 zeros (multiply by 0x1000)
+5. Run `echo "base=<frame address as hex> size=0x40000000 type=uncachable" >| /proc/mtrr`
+6. Use `prober` command line and observe activity on the DRAM bus with a logic analyzer
+
+### Backup Approach to PFN Determination
+1. Use `/proc/<pid>/maps` to get virtual address of the huge page
+2. Use `pfn_q` with pid and virtual address to get page frame number (make sure to use `sudo`, or PFN will always show as `0x0`)
 
 ## Usage
 `prober` starts at address `0x0010`. All commands are single-characters indicated by the
