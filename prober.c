@@ -124,7 +124,7 @@ int main(int argc, char **argv)
 	if (pfn == -1)
 		fprintf(stderr, "Unable to get page frame number of huge page. Are you running as sudo?\n");
 	else
-		fprintf(stdout, " with physical page frame number %#lx", pfn);
+		fprintf(stdout, " with physical page frame number %#lx (1GB hugepage #%lu)", pfn, pfn >> 18);
 	fprintf(stdout, "\n");
 
 	int done = 0;
